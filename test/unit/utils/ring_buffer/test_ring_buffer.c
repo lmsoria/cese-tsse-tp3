@@ -85,6 +85,15 @@ void test_buffer_full(void)
     TEST_ASSERT(ring_buffer_is_full(ring_buffer));
     TEST_ASSERT_EQUAL_UINT(BUFFER_SIZE, ring_buffer_size(ring_buffer));
 }
+/// @test This test verifies that when reading an empty ring buffer the ring_buffer_read_byte() function should return
+/// -1
+void test_read_empty_buffer(void)
+{
+    uint8_t data = 0;
+
+    TEST_ASSERT(ring_buffer_is_empty(ring_buffer));
+    TEST_ASSERT_EQUAL_INT(-1, ring_buffer_read_byte(ring_buffer, &data));
+}
 
 /// @test This test verifies the behavior of the ring buffer when performing a series of write and read operations
 /// without reaching the wraparound condition.
