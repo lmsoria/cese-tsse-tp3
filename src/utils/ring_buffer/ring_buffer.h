@@ -120,7 +120,6 @@ bool ring_buffer_is_full(ring_buffer_t rb);
 ///
 /// @param rb Pointer to the ring buffer structure to write to.
 /// @param data The byte of data to write to the buffer.
-/// @return true if the data was successfully written, false if the buffer is full and data was discarded.
 ///
 void ring_buffer_write_byte(ring_buffer_t rb, uint8_t data);
 
