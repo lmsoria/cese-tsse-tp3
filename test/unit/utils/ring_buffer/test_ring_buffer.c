@@ -70,4 +70,22 @@ void test_buffer_empty(void)
     TEST_ASSERT(!ring_buffer_is_full(&ring_buffer));
 }
 
+/// @test This test verifies the behavior of the ring_buffer_is_full() function by filling the ring buffer to its
+/// maximum capacity and then checking whether the function correctly returns true. It initializes a ring buffer with a
+/// specified size and fills it with data up to its capacity. After filling the buffer, the test asserts that the buffer
+/// is not empty and that the ring_buffer_is_full() function returns true, indicating that the buffer is indeed full.
+void test_buffer_full(void)
+{
+    static const size_t BUFFER_SIZE = 16;
+    ring_buffer_t ring_buffer;
+    uint8_t container[BUFFER_SIZE];
+
+    ring_buffer_init(&ring_buffer, container, BUFFER_SIZE);
+
+    for (size_t i = 0; i < BUFFER_SIZE; i++) { ring_buffer_write_byte(&ring_buffer, (uint8_t)i); }
+
+    TEST_ASSERT(!ring_buffer_is_empty(&ring_buffer));
+    TEST_ASSERT(ring_buffer_is_full(&ring_buffer));
+}
+
 /* === End of documentation ==================================================================== */
