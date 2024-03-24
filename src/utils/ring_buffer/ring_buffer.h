@@ -36,6 +36,7 @@ SPDX-License-Identifier: MIT
 /* === Headers files inclusions ================================================================ */
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
 /* === C++ Guard =============================================================================== */
@@ -46,20 +47,14 @@ extern "C" {
 
 /* === Public macros definitions =============================================================== */
 
-///
-/// @brief Structure representing a ring buffer.
-///
-/// The ring buffer maintains a fixed-size circular buffer with read and write indices.
-///
-typedef struct ring_buffer_t
-{
-    uint8_t* buffer;       ///< Pointer to the underlying buffer.
-    uint32_t mask;         ///< Mask used for wrapping indices.
-    uint32_t read_index;   ///< Index pointing to the next element to be read.
-    uint32_t write_index;  ///< Index pointing to the next element to be written.
-} ring_buffer_t;
-
 /* === Public data type declarations =========================================================== */
+
+/// Opaque circular buffer structure
+typedef struct ring_buf_t ring_buf_t;
+
+/// Handle type, the way users interact with the API
+typedef ring_buf_t* ring_buffer_t;
+
 /* === Public variable declarations ============================================================ */
 /* === Public function declarations ============================================================ */
 
@@ -70,16 +65,36 @@ typedef struct ring_buffer_t
 /// must be pre-allocated by the caller. Additionally, the size parameter should be a power
 /// of two as per the API assumption.
 ///
-/// @param rb Pointer to the ring buffer structure to initialize.
 /// @param buffer Pointer to the pre-allocated buffer.
 /// @param size Size of the buffer. Must be a power of two.
 ///
-void ring_buffer_init(ring_buffer_t* rb, uint8_t* buffer, uint32_t size);
+ring_buffer_t ring_buffer_init(uint8_t* buffer, size_t size);
 
-/// @brief Returns the size of the current ring buffer.
-/// @param rb Pointer to the ring buffer structure to check.
+///
+/// @brief Free a ring buffer structure. Data is not free'd, since it's owner's responsibility.
+/// @param rb Ring buffer to free
+///
+void ring_buffer_deinit(ring_buffer_t rb);
+
+///
+/// @brief Resets the ring buffer state to empty (ie tail == head). Data is not cleared.
+/// @param rb Ring buffer to reset.
+///
+void ring_buffer_reset(ring_buffer_t rb);
+
+///
+/// @brief Returns the number of elements stored on the ring buffer.
+/// @param rb Ring buffer to check.
 /// @return Size of the buffer.
-uint32_t ring_buffer_size(ring_buffer_t* rb);
+///
+size_t ring_buffer_size(ring_buffer_t rb);
+
+///
+/// @brief Returns the ring buffer capacity.
+/// @param rb Ring buffer to check.
+/// @return Maximum size of the buffer.
+///
+size_t ring_buffer_capacity(ring_buffer_t rb);
 
 ///
 /// @brief Checks if the ring buffer is empty.
@@ -87,7 +102,7 @@ uint32_t ring_buffer_size(ring_buffer_t* rb);
 /// @param rb Pointer to the ring buffer structure to check.
 /// @return true if the ring buffer is empty, false otherwise.
 ///
-bool ring_buffer_is_empty(ring_buffer_t* rb);
+bool ring_buffer_is_empty(ring_buffer_t rb);
 
 ///
 /// @brief Checks if the ring buffer is full.
@@ -95,7 +110,8 @@ bool ring_buffer_is_empty(ring_buffer_t* rb);
 /// @param rb Pointer to the ring buffer structure to check.
 /// @return true if the ring buffer is full, false otherwise.
 ///
-bool ring_buffer_is_full(ring_buffer_t* rb);
+bool ring_buffer_is_full(ring_buffer_t rb);
+
 ///
 /// @brief Writes a byte of data to the ring buffer.
 ///
@@ -106,7 +122,7 @@ bool ring_buffer_is_full(ring_buffer_t* rb);
 /// @param data The byte of data to write to the buffer.
 /// @return true if the data was successfully written, false if the buffer is full and data was discarded.
 ///
-bool ring_buffer_write_byte(ring_buffer_t* rb, uint8_t data);
+void ring_buffer_write_byte(ring_buffer_t rb, uint8_t data);
 
 ///
 /// @brief Reads a byte of data from the ring buffer.
@@ -115,9 +131,9 @@ bool ring_buffer_write_byte(ring_buffer_t* rb, uint8_t data);
 ///
 /// @param rb Pointer to the ring buffer structure to read from.
 /// @param data Pointer to a variable to store the read data.
-/// @return true if data was successfully read, false if the buffer is empty.
+/// @return 0 on success, or -1 if the buffer is empty.
 ///
-bool ring_buffer_read_byte(ring_buffer_t* rb, uint8_t* data);
+int ring_buffer_read_byte(ring_buffer_t rb, uint8_t* data);
 
 /* === End of documentation ==================================================================== */
 

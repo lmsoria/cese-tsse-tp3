@@ -26,69 +26,142 @@ SPDX-License-Identifier: MIT
 
 /* === Headers files inclusions ================================================================ */
 
+#include <assert.h>
+#include <stdlib.h>
+
 #include "ring_buffer.h"
 
 /* === Macros definitions ====================================================================== */
 /* === Private data type declarations ========================================================== */
+
+///
+/// @brief Structure representing a ring buffer.
+///
+/// The ring buffer maintains a fixed-size circular buffer with read and write indices.
+///
+struct ring_buf_t
+{
+    uint8_t* buffer;  ///< Pointer to the underlying buffer.
+    size_t capacity;  ///< Length of the buffer.
+    size_t tail;      ///< Index pointing to the next element to be read.
+    size_t head;      ///< Index pointing to the next element to be written.
+    bool is_full;     ///< Whether is full or not
+};
+
 /* === Private variable declarations =========================================================== */
 /* === Private function declarations =========================================================== */
+
+static void advance_head_pointer(ring_buffer_t rb);
+
 /* === Public variable definitions ============================================================= */
 /* === Private variable definitions ============================================================ */
 /* === Private function implementation ========================================================= */
+
+static inline size_t advance_headtail_value(size_t value, size_t capacity) { return (value + 1) % capacity; }
+
+static void advance_head_pointer(ring_buffer_t rb)
+{
+    assert(rb);
+
+    if (ring_buffer_is_full(rb)) { rb->tail = advance_headtail_value(rb->tail, rb->capacity); }
+
+    rb->head = advance_headtail_value(rb->head, rb->capacity);
+    rb->is_full = (rb->head == rb->tail);
+}
+
 /* === Public function implementation ========================================================== */
 
-void ring_buffer_init(ring_buffer_t* rb, uint8_t* buffer, uint32_t size)
+ring_buffer_t ring_buffer_init(uint8_t* buffer, size_t size)
 {
+    assert(buffer && size);
+
+    ring_buffer_t rb = malloc(sizeof(ring_buf_t));
+    assert(rb);
+
     rb->buffer = buffer;
-    rb->read_index = 0;
-    rb->write_index = 0;
-    rb->mask = size - 1;  // API assumption: the size is a power of two.
+    rb->capacity = size;
+    ring_buffer_reset(rb);
+
+    assert(ring_buffer_is_empty(rb));
+
+    return rb;
 }
 
-uint32_t ring_buffer_size(ring_buffer_t* rb) { return rb->mask + 1; }
-
-// This function checks whether the ring buffer is full by comparing the next write
-// index with the current read index. If they are adjacent, it indicates that the buffer
-// is full.
-bool ring_buffer_is_full(ring_buffer_t* rb)
+void ring_buffer_deinit(ring_buffer_t rb)
 {
-    uint32_t next_write_index = (rb->write_index + 1) & rb->mask;
-    return (next_write_index == rb->read_index);
+    assert(rb);
+    free(rb);
 }
 
-// This function checks whether the ring buffer is empty by comparing the read and write indices.
-bool ring_buffer_is_empty(ring_buffer_t* rb) { return (rb->read_index == rb->write_index); }
-
-bool ring_buffer_write_byte(ring_buffer_t* rb, uint8_t data)
+void ring_buffer_reset(ring_buffer_t rb)
 {
-    // First we make a local copy to keep track of the value during the call time (in case an ISR happens)
-    uint32_t read_index = rb->read_index;
-    uint32_t write_index = rb->write_index;
+    assert(rb);
 
-    uint32_t next_write_index = (write_index + 1) & rb->mask;
-    // Avoid having write_index equal to read_index (and therefore making the ring buffer "empty")
-    // by discarding the newer incoming data.
-    if (next_write_index == read_index) { return false; }
-
-    rb->buffer[write_index] = data;
-    rb->write_index = next_write_index;
-
-    return true;
+    rb->head = 0;
+    rb->tail = 0;
+    rb->is_full = false;
 }
 
-bool ring_buffer_read_byte(ring_buffer_t* rb, uint8_t* data)
+size_t ring_buffer_size(ring_buffer_t rb)
 {
-    // First we make a local copy to keep track of the value during the call time (in case an ISR happens)
-    uint32_t read_index = rb->read_index;
-    uint32_t write_index = rb->write_index;
+    assert(rb);
 
-    if (read_index == write_index) { return false; }
+    size_t size = rb->capacity;
 
-    *data = rb->buffer[read_index];
-    read_index = (read_index + 1) & rb->mask;
-    rb->read_index = read_index;
+    if (!ring_buffer_is_full(rb)) {
+        if (rb->head >= rb->tail) {
+            size = (rb->head - rb->tail);
+        } else {
+            size = (rb->capacity + rb->head - rb->tail);
+        }
+    }
 
-    return true;
+    return size;
+}
+
+size_t ring_buffer_capacity(ring_buffer_t rb)
+{
+    assert(rb);
+    return rb->capacity;
+}
+
+bool ring_buffer_is_empty(ring_buffer_t rb)
+{
+    assert(rb);
+
+    return (!ring_buffer_is_full(rb) && (rb->head == rb->tail));
+}
+
+bool ring_buffer_is_full(ring_buffer_t rb)
+{
+    assert(rb);
+
+    return rb->is_full;
+}
+
+void ring_buffer_write_byte(ring_buffer_t rb, uint8_t data)
+{
+    assert(rb && rb->buffer);
+
+    rb->buffer[rb->head] = data;
+
+    advance_head_pointer(rb);
+}
+
+int ring_buffer_read_byte(ring_buffer_t rb, uint8_t* data)
+{
+    assert(rb && data && rb->buffer);
+
+    int r = -1;
+
+    if (!ring_buffer_is_empty(rb)) {
+        *data = rb->buffer[rb->tail];
+        rb->tail = advance_headtail_value(rb->tail, rb->capacity);
+        rb->is_full = false;
+        r = 0;
+    }
+
+    return r;
 }
 
 /* === End of documentation ==================================================================== */
