@@ -47,6 +47,16 @@ void ring_buffer_init(ring_buffer_t* rb, uint8_t* buffer, uint32_t size)
 
 uint32_t ring_buffer_size(ring_buffer_t* rb) { return rb->mask + 1; }
 
+// This function checks whether the ring buffer is full by comparing the next write
+// index with the current read index. If they are adjacent, it indicates that the buffer
+// is full.
+bool ring_buffer_is_full(ring_buffer_t* rb)
+{
+    uint32_t next_write_index = (rb->write_index + 1) & rb->mask;
+    return (next_write_index == rb->read_index);
+}
+
+// This function checks whether the ring buffer is empty by comparing the read and write indices.
 bool ring_buffer_is_empty(ring_buffer_t* rb) { return (rb->read_index == rb->write_index); }
 
 bool ring_buffer_write_byte(ring_buffer_t* rb, uint8_t data)

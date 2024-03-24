@@ -56,4 +56,18 @@ void test_initial_state(void)
     TEST_ASSERT_EQUAL_UINT(0, ring_buffer.write_index);
 }
 
+/// @test Ensure that the ring buffer reports as empty when no data has been written to it and that attempting to read
+/// from it returns an appropriate error or indication of emptiness.
+void test_buffer_empty(void)
+{
+    static const size_t BUFFER_SIZE = 16;
+    ring_buffer_t ring_buffer;
+    uint8_t container[BUFFER_SIZE];
+
+    ring_buffer_init(&ring_buffer, container, BUFFER_SIZE);
+
+    TEST_ASSERT(ring_buffer_is_empty(&ring_buffer));
+    TEST_ASSERT(!ring_buffer_is_full(&ring_buffer));
+}
+
 /* === End of documentation ==================================================================== */

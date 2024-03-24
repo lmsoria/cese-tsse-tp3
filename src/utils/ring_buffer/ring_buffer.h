@@ -84,13 +84,18 @@ uint32_t ring_buffer_size(ring_buffer_t* rb);
 ///
 /// @brief Checks if the ring buffer is empty.
 ///
-/// This function checks whether the ring buffer is empty by comparing the read and write indices.
-///
 /// @param rb Pointer to the ring buffer structure to check.
 /// @return true if the ring buffer is empty, false otherwise.
 ///
 bool ring_buffer_is_empty(ring_buffer_t* rb);
 
+///
+/// @brief Checks if the ring buffer is full.
+///
+/// @param rb Pointer to the ring buffer structure to check.
+/// @return true if the ring buffer is full, false otherwise.
+///
+bool ring_buffer_is_full(ring_buffer_t* rb);
 ///
 /// @brief Writes a byte of data to the ring buffer.
 ///
