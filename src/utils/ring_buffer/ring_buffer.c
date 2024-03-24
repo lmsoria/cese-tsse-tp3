@@ -37,7 +37,7 @@ SPDX-License-Identifier: MIT
 /* === Private function implementation ========================================================= */
 /* === Public function implementation ========================================================== */
 
-void ring_buffer_setup(ring_buffer_t* rb, uint8_t* buffer, uint32_t size)
+void ring_buffer_init(ring_buffer_t* rb, uint8_t* buffer, uint32_t size)
 {
     rb->buffer = buffer;
     rb->read_index = 0;
@@ -45,9 +45,9 @@ void ring_buffer_setup(ring_buffer_t* rb, uint8_t* buffer, uint32_t size)
     rb->mask = size - 1;  // API assumption: the size is a power of two.
 }
 
-bool ring_buffer_empty(ring_buffer_t* rb) { return (rb->read_index == rb->write_index); }
+bool ring_buffer_is_empty(ring_buffer_t* rb) { return (rb->read_index == rb->write_index); }
 
-bool ring_buffer_write(ring_buffer_t* rb, uint8_t data)
+bool ring_buffer_write_byte(ring_buffer_t* rb, uint8_t data)
 {
     // First we make a local copy to keep track of the value during the call time (in case an ISR happens)
     uint32_t read_index = rb->read_index;
@@ -64,7 +64,7 @@ bool ring_buffer_write(ring_buffer_t* rb, uint8_t data)
     return true;
 }
 
-bool ring_buffer_read(ring_buffer_t* rb, uint8_t* data)
+bool ring_buffer_read_byte(ring_buffer_t* rb, uint8_t* data)
 {
     // First we make a local copy to keep track of the value during the call time (in case an ISR happens)
     uint32_t read_index = rb->read_index;
