@@ -19,14 +19,16 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 SPDX-License-Identifier: MIT
 *************************************************************************************************/
 
-///
-/// @file ring_buffer.c
-/// @brief Defines a ring buffer data structure and associated functions in C (implementation).
-///
+/** @file test_ring_buffer.c
+ ** @brief Test suite for the Ring Buffer data structure.
+ **/
 
 /* === Headers files inclusions ================================================================ */
 
-#include "ring_buffer.h"
+#include <stddef.h>
+#include <unity.h>
+
+#include <utils/ring_buffer/ring_buffer.h>
 
 /* === Macros definitions ====================================================================== */
 /* === Private data type declarations ========================================================== */
@@ -37,48 +39,21 @@ SPDX-License-Identifier: MIT
 /* === Private function implementation ========================================================= */
 /* === Public function implementation ========================================================== */
 
-void ring_buffer_init(ring_buffer_t* rb, uint8_t* buffer, uint32_t size)
+/// @test This test verifies that the ring buffer is initialized correctly with the expected properties
+/// when no data has been written to or read from it. It sets up a ring buffer with a specified
+/// size and checks that the size matches the expected buffer size, and both the read and write
+/// indices are at their initial positions (0).
+void test_initial_state(void)
 {
-    rb->buffer = buffer;
-    rb->read_index = 0;
-    rb->write_index = 0;
-    rb->mask = size - 1;  // API assumption: the size is a power of two.
-}
+    static const size_t BUFFER_SIZE = 16;
+    ring_buffer_t ring_buffer;
+    uint8_t container[BUFFER_SIZE];
 
-uint32_t ring_buffer_size(ring_buffer_t* rb) { return rb->mask + 1; }
+    ring_buffer_init(&ring_buffer, container, BUFFER_SIZE);
 
-bool ring_buffer_is_empty(ring_buffer_t* rb) { return (rb->read_index == rb->write_index); }
-
-bool ring_buffer_write_byte(ring_buffer_t* rb, uint8_t data)
-{
-    // First we make a local copy to keep track of the value during the call time (in case an ISR happens)
-    uint32_t read_index = rb->read_index;
-    uint32_t write_index = rb->write_index;
-
-    uint32_t next_write_index = (write_index + 1) & rb->mask;
-    // Avoid having write_index equal to read_index (and therefore making the ring buffer "empty")
-    // by discarding the newer incoming data.
-    if (next_write_index == read_index) { return false; }
-
-    rb->buffer[write_index] = data;
-    rb->write_index = next_write_index;
-
-    return true;
-}
-
-bool ring_buffer_read_byte(ring_buffer_t* rb, uint8_t* data)
-{
-    // First we make a local copy to keep track of the value during the call time (in case an ISR happens)
-    uint32_t read_index = rb->read_index;
-    uint32_t write_index = rb->write_index;
-
-    if (read_index == write_index) { return false; }
-
-    *data = rb->buffer[read_index];
-    read_index = (read_index + 1) & rb->mask;
-    rb->read_index = read_index;
-
-    return true;
+    TEST_ASSERT_EQUAL_UINT(BUFFER_SIZE, ring_buffer_size(&ring_buffer));
+    TEST_ASSERT_EQUAL_UINT(0, ring_buffer.read_index);
+    TEST_ASSERT_EQUAL_UINT(0, ring_buffer.write_index);
 }
 
 /* === End of documentation ==================================================================== */

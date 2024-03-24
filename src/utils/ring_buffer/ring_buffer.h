@@ -76,6 +76,11 @@ typedef struct ring_buffer_t
 ///
 void ring_buffer_init(ring_buffer_t* rb, uint8_t* buffer, uint32_t size);
 
+/// @brief Returns the size of the current ring buffer.
+/// @param rb Pointer to the ring buffer structure to check.
+/// @return Size of the buffer.
+uint32_t ring_buffer_size(ring_buffer_t* rb);
+
 ///
 /// @brief Checks if the ring buffer is empty.
 ///
