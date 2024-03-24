@@ -71,9 +71,11 @@
 :gcov:
   :reports:
     - HtmlDetailed
+    - Coverage
   :gcovr:
     :html_medium_threshold: 75
     :html_high_threshold: 90
+  :uncovered_ignored_list: [src/main.c]
 
 #:tools:
 # Ceedling defaults to using gcc for compiling, linking, etc.
@@ -98,4 +100,6 @@
   :enabled:
     - stdout_pretty_tests_report
     - module_generator
+    - gcov
+    - junit_tests_report
 ...
