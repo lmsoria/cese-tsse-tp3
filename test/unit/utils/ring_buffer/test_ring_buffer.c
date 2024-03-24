@@ -36,7 +36,7 @@ SPDX-License-Identifier: MIT
 
 /* === Private data type declarations ========================================================== */
 
-static ring_buffer_t ring_buffer;
+static ring_buffer_t ring_buffer = NULL;
 static uint8_t ring_buffer_container[BUFFER_SIZE] = {0};
 
 /* === Private variable declarations =========================================================== */
@@ -46,7 +46,7 @@ static uint8_t ring_buffer_container[BUFFER_SIZE] = {0};
 /* === Private function implementation ========================================================= */
 /* === Public function implementation ========================================================== */
 
-void setUp(void) { ring_buffer_init(&ring_buffer, ring_buffer_container, BUFFER_SIZE); }
+void setUp(void) { ring_buffer = ring_buffer_init(ring_buffer_container, BUFFER_SIZE); }
 
 /// @test This test verifies that the ring buffer is initialized correctly with the expected properties
 /// when no data has been written to or read from it. It sets up a ring buffer with a specified
@@ -57,19 +57,20 @@ void test_initial_state(void)
     ring_buffer_t rb;
     uint8_t container[BUFFER_SIZE];
 
-    ring_buffer_init(&rb, container, BUFFER_SIZE);
+    rb = ring_buffer_init(container, BUFFER_SIZE);
 
-    TEST_ASSERT_EQUAL_UINT(BUFFER_SIZE, ring_buffer_size(&rb));
-    TEST_ASSERT_EQUAL_UINT(0, rb.read_index);
-    TEST_ASSERT_EQUAL_UINT(0, rb.write_index);
+    TEST_ASSERT_NOT_NULL(rb);
+
+    TEST_ASSERT_EQUAL_UINT(BUFFER_SIZE, ring_buffer_capacity(rb));
+    TEST_ASSERT_EQUAL_UINT(0, ring_buffer_size(rb));
 }
 
 /// @test Ensure that the ring buffer reports as empty when no data has been written to it and that attempting to read
 /// from it returns an appropriate error or indication of emptiness.
 void test_buffer_empty(void)
 {
-    TEST_ASSERT(ring_buffer_is_empty(&ring_buffer));
-    TEST_ASSERT(!ring_buffer_is_full(&ring_buffer));
+    TEST_ASSERT(ring_buffer_is_empty(ring_buffer));
+    TEST_ASSERT(!ring_buffer_is_full(ring_buffer));
 }
 
 /// @test This test verifies the behavior of the ring_buffer_is_full() function by filling the ring buffer to its
@@ -78,10 +79,32 @@ void test_buffer_empty(void)
 /// is not empty and that the ring_buffer_is_full() function returns true, indicating that the buffer is indeed full.
 void test_buffer_full(void)
 {
-    for (size_t i = 0; i < BUFFER_SIZE; i++) { ring_buffer_write_byte(&ring_buffer, (uint8_t)i); }
+    for (size_t i = 0; i < BUFFER_SIZE; i++) { ring_buffer_write_byte(ring_buffer, (uint8_t)i); }
 
-    TEST_ASSERT(!ring_buffer_is_empty(&ring_buffer));
-    TEST_ASSERT(ring_buffer_is_full(&ring_buffer));
+    TEST_ASSERT(!ring_buffer_is_empty(ring_buffer));
+    TEST_ASSERT(ring_buffer_is_full(ring_buffer));
+    TEST_ASSERT_EQUAL_UINT(BUFFER_SIZE, ring_buffer_size(ring_buffer));
+}
+
+/// @test This test verifies the behavior of the ring buffer when performing a series of write and read operations
+/// without reaching the wraparound condition.
+void test_buffer_read_and_write_single_byte(void)
+{
+    const uint8_t A = 'a';
+    uint8_t data = 0;
+
+    // First case. Write A and Read A.
+    ring_buffer_write_byte(ring_buffer, A);
+
+    // After writing A the ring buffer size should increase
+    TEST_ASSERT_EQUAL_UINT(1, ring_buffer_size(ring_buffer));
+
+    // Now retrieve the data
+    TEST_ASSERT_EQUAL_INT(0, ring_buffer_read_byte(ring_buffer, &data));
+    TEST_ASSERT_EQUAL_UINT8(data, A);
+
+    // After writing A the ring buffer size should increase
+    TEST_ASSERT_EQUAL_UINT(0, ring_buffer_size(ring_buffer));
 }
 
 /// @test This test verifies the behavior of the ring buffer when performing a series of write and read operations
@@ -93,30 +116,28 @@ void test_buffer_read_and_write_no_wrapping(void)
     const uint8_t C = 'c';
     uint8_t data = 0;
 
-    // First case. Write A and Read A.
-    TEST_ASSERT(ring_buffer_write_byte(&ring_buffer, A));
-    TEST_ASSERT(ring_buffer_read_byte(&ring_buffer, &data));
-    TEST_ASSERT_EQUAL_UINT8(data, A);
-
     // Second case. Write A, B and C in order.
-    TEST_ASSERT(ring_buffer_write_byte(&ring_buffer, A));
-    TEST_ASSERT(ring_buffer_write_byte(&ring_buffer, B));
-    TEST_ASSERT(ring_buffer_write_byte(&ring_buffer, C));
+    ring_buffer_write_byte(ring_buffer, A);
+    ring_buffer_write_byte(ring_buffer, B);
+    ring_buffer_write_byte(ring_buffer, C);
+
+    // After writing A, b and C the ring buffer size should be 3
+    TEST_ASSERT_EQUAL_UINT(3, ring_buffer_size(ring_buffer));
 
     // First read operation should return A
-    TEST_ASSERT(ring_buffer_read_byte(&ring_buffer, &data));
+    TEST_ASSERT_EQUAL_INT(0, ring_buffer_read_byte(ring_buffer, &data));
     TEST_ASSERT_EQUAL_UINT8(data, A);
 
     // Second read operation should return B
-    TEST_ASSERT(ring_buffer_read_byte(&ring_buffer, &data));
+    TEST_ASSERT_EQUAL_INT(0, ring_buffer_read_byte(ring_buffer, &data));
     TEST_ASSERT_EQUAL_UINT8(data, B);
 
     // Third read operation should return C
-    TEST_ASSERT(ring_buffer_read_byte(&ring_buffer, &data));
+    TEST_ASSERT_EQUAL_INT(0, ring_buffer_read_byte(ring_buffer, &data));
     TEST_ASSERT_EQUAL_UINT8(data, C);
 
     // After reading all the data the buffer should be empty.
-    TEST_ASSERT(ring_buffer_is_empty(&ring_buffer));
+    TEST_ASSERT(ring_buffer_is_empty(ring_buffer));
 }
 
 /* === End of documentation ==================================================================== */
