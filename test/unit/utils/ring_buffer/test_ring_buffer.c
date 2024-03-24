@@ -88,4 +88,45 @@ void test_buffer_full(void)
     TEST_ASSERT(ring_buffer_is_full(&ring_buffer));
 }
 
+/// @test This test verifies the behavior of the ring buffer when performing a series of write and read operations
+/// without reaching the wraparound condition.
+void test_buffer_read_and_write_no_wrapping(void)
+{
+    static const size_t BUFFER_SIZE = 16;
+    ring_buffer_t ring_buffer;
+    uint8_t container[BUFFER_SIZE];
+
+    const uint8_t A = 'a';
+    const uint8_t B = 'b';
+    const uint8_t C = 'c';
+    uint8_t data = 0;
+
+    ring_buffer_init(&ring_buffer, container, BUFFER_SIZE);
+
+    // First case. Write A and Read A.
+    TEST_ASSERT(ring_buffer_write_byte(&ring_buffer, A));
+    TEST_ASSERT(ring_buffer_read_byte(&ring_buffer, &data));
+    TEST_ASSERT_EQUAL_UINT8(data, A);
+
+    // Second case. Write A, B and C in order.
+    TEST_ASSERT(ring_buffer_write_byte(&ring_buffer, A));
+    TEST_ASSERT(ring_buffer_write_byte(&ring_buffer, B));
+    TEST_ASSERT(ring_buffer_write_byte(&ring_buffer, C));
+
+    // First read operation should return A
+    TEST_ASSERT(ring_buffer_read_byte(&ring_buffer, &data));
+    TEST_ASSERT_EQUAL_UINT8(data, A);
+
+    // Second read operation should return B
+    TEST_ASSERT(ring_buffer_read_byte(&ring_buffer, &data));
+    TEST_ASSERT_EQUAL_UINT8(data, B);
+
+    // Third read operation should return C
+    TEST_ASSERT(ring_buffer_read_byte(&ring_buffer, &data));
+    TEST_ASSERT_EQUAL_UINT8(data, C);
+
+    // After reading all the data the buffer should be empty.
+    TEST_ASSERT(ring_buffer_is_empty(&ring_buffer));
+}
+
 /* === End of documentation ==================================================================== */
