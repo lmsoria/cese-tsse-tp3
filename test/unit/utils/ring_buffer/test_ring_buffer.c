@@ -31,7 +31,14 @@ SPDX-License-Identifier: MIT
 #include <utils/ring_buffer/ring_buffer.h>
 
 /* === Macros definitions ====================================================================== */
+
+#define BUFFER_SIZE 16
+
 /* === Private data type declarations ========================================================== */
+
+static ring_buffer_t ring_buffer;
+static uint8_t ring_buffer_container[BUFFER_SIZE] = {0};
+
 /* === Private variable declarations =========================================================== */
 /* === Private function declarations =========================================================== */
 /* === Public variable definitions ============================================================= */
@@ -39,33 +46,28 @@ SPDX-License-Identifier: MIT
 /* === Private function implementation ========================================================= */
 /* === Public function implementation ========================================================== */
 
+void setUp(void) { ring_buffer_init(&ring_buffer, ring_buffer_container, BUFFER_SIZE); }
+
 /// @test This test verifies that the ring buffer is initialized correctly with the expected properties
 /// when no data has been written to or read from it. It sets up a ring buffer with a specified
 /// size and checks that the size matches the expected buffer size, and both the read and write
 /// indices are at their initial positions (0).
 void test_initial_state(void)
 {
-    static const size_t BUFFER_SIZE = 16;
-    ring_buffer_t ring_buffer;
+    ring_buffer_t rb;
     uint8_t container[BUFFER_SIZE];
 
-    ring_buffer_init(&ring_buffer, container, BUFFER_SIZE);
+    ring_buffer_init(&rb, container, BUFFER_SIZE);
 
-    TEST_ASSERT_EQUAL_UINT(BUFFER_SIZE, ring_buffer_size(&ring_buffer));
-    TEST_ASSERT_EQUAL_UINT(0, ring_buffer.read_index);
-    TEST_ASSERT_EQUAL_UINT(0, ring_buffer.write_index);
+    TEST_ASSERT_EQUAL_UINT(BUFFER_SIZE, ring_buffer_size(&rb));
+    TEST_ASSERT_EQUAL_UINT(0, rb.read_index);
+    TEST_ASSERT_EQUAL_UINT(0, rb.write_index);
 }
 
 /// @test Ensure that the ring buffer reports as empty when no data has been written to it and that attempting to read
 /// from it returns an appropriate error or indication of emptiness.
 void test_buffer_empty(void)
 {
-    static const size_t BUFFER_SIZE = 16;
-    ring_buffer_t ring_buffer;
-    uint8_t container[BUFFER_SIZE];
-
-    ring_buffer_init(&ring_buffer, container, BUFFER_SIZE);
-
     TEST_ASSERT(ring_buffer_is_empty(&ring_buffer));
     TEST_ASSERT(!ring_buffer_is_full(&ring_buffer));
 }
@@ -76,12 +78,6 @@ void test_buffer_empty(void)
 /// is not empty and that the ring_buffer_is_full() function returns true, indicating that the buffer is indeed full.
 void test_buffer_full(void)
 {
-    static const size_t BUFFER_SIZE = 16;
-    ring_buffer_t ring_buffer;
-    uint8_t container[BUFFER_SIZE];
-
-    ring_buffer_init(&ring_buffer, container, BUFFER_SIZE);
-
     for (size_t i = 0; i < BUFFER_SIZE; i++) { ring_buffer_write_byte(&ring_buffer, (uint8_t)i); }
 
     TEST_ASSERT(!ring_buffer_is_empty(&ring_buffer));
@@ -92,16 +88,10 @@ void test_buffer_full(void)
 /// without reaching the wraparound condition.
 void test_buffer_read_and_write_no_wrapping(void)
 {
-    static const size_t BUFFER_SIZE = 16;
-    ring_buffer_t ring_buffer;
-    uint8_t container[BUFFER_SIZE];
-
     const uint8_t A = 'a';
     const uint8_t B = 'b';
     const uint8_t C = 'c';
     uint8_t data = 0;
-
-    ring_buffer_init(&ring_buffer, container, BUFFER_SIZE);
 
     // First case. Write A and Read A.
     TEST_ASSERT(ring_buffer_write_byte(&ring_buffer, A));
