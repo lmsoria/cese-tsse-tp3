@@ -149,4 +149,39 @@ void test_buffer_read_and_write_no_wrapping(void)
     TEST_ASSERT(ring_buffer_is_empty(ring_buffer));
 }
 
+/// @test This test verifies that the ring buffer will overwrite old data when the buffer is full.
+void test_buffer_read_and_write_with_wrapping(void)
+{
+    const uint8_t A = 'a';
+    const uint8_t B = 'b';
+    const uint8_t C = 'c';
+    uint8_t data = 0;
+
+    for (size_t i = 0; i < BUFFER_SIZE - 1; i++) { ring_buffer_write_byte(ring_buffer, (uint8_t)i); }
+
+    // We should have room for one more byte here
+    TEST_ASSERT_EQUAL_UINT(BUFFER_SIZE - 1, ring_buffer_size(ring_buffer));
+    TEST_ASSERT(!ring_buffer_is_full(ring_buffer));
+
+    ring_buffer_write_byte(ring_buffer, A);
+
+    // After adding A, the buffer should be full
+    TEST_ASSERT_EQUAL_UINT(BUFFER_SIZE, ring_buffer_size(ring_buffer));
+    TEST_ASSERT(ring_buffer_is_full(ring_buffer));
+
+    // Now add B. Since there is no space it will overwrite old data.
+    ring_buffer_write_byte(ring_buffer, B);
+
+    TEST_ASSERT_EQUAL_UINT(BUFFER_SIZE, ring_buffer_size(ring_buffer));
+    TEST_ASSERT(ring_buffer_is_full(ring_buffer));
+
+    // First read operation should return `1`, since `0` was overwritten by B
+    TEST_ASSERT_EQUAL_INT(0, ring_buffer_read_byte(ring_buffer, &data));
+    TEST_ASSERT_EQUAL_UINT8(1, data);
+
+    // Now that we've read a byte, the buffer should not be full anymore
+    TEST_ASSERT_EQUAL_UINT(BUFFER_SIZE - 1, ring_buffer_size(ring_buffer));
+    TEST_ASSERT(!ring_buffer_is_full(ring_buffer));
+}
+
 /* === End of documentation ==================================================================== */
