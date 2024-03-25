@@ -87,10 +87,11 @@ ring_buffer_t ring_buffer_init(uint8_t* buffer, size_t size)
     return rb;
 }
 
-void ring_buffer_deinit(ring_buffer_t rb)
+void ring_buffer_deinit(ring_buffer_t* rb)
 {
-    assert(rb);
-    free(rb);
+    assert(rb != NULL);
+    free(*rb);
+    *rb = NULL;
 }
 
 void ring_buffer_reset(ring_buffer_t rb)

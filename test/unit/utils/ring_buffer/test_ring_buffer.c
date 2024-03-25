@@ -115,6 +115,27 @@ void test_reset_ring_buffer(void)
     TEST_ASSERT_EQUAL_UINT(0, ring_buffer_size(ring_buffer));
 }
 
+/// @test This test verifies that calling ring_buffer_deinit() will set ring_buffer to NULL, but not the underliying
+/// container.
+void test_ring_buffer_deinit(void)
+{
+    // First fill the buffer with some data.
+    for (size_t i = 0; i < BUFFER_SIZE; i++) { ring_buffer_write_byte(ring_buffer, (uint8_t)i); }
+
+    // After this, the buffer should be full
+    TEST_ASSERT_EQUAL_UINT(BUFFER_SIZE, ring_buffer_size(ring_buffer));
+    TEST_ASSERT(ring_buffer_is_full(ring_buffer));
+
+    // Now deinit the buffer
+    ring_buffer_deinit(&ring_buffer);
+
+    // Check for ring_buffer nullity.
+    TEST_ASSERT_NULL(ring_buffer);
+
+    // Since it's users responsibility to free the data, that pointer will be not NULL.
+    TEST_ASSERT_NOT_NULL(ring_buffer_container);
+}
+
 /// @test This test verifies the behavior of the ring buffer when performing a series of write and read operations
 /// without reaching the wraparound condition.
 void test_buffer_read_and_write_single_byte(void)

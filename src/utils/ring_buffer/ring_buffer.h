@@ -72,9 +72,10 @@ ring_buffer_t ring_buffer_init(uint8_t* buffer, size_t size);
 
 ///
 /// @brief Free a ring buffer structure. Data is not free'd, since it's owner's responsibility.
-/// @param rb Ring buffer to free
+/// @param rb Ring buffer to free. Since it's a pointer, you may want to pass the addess (in contrast with the rest of
+/// the API).
 ///
-void ring_buffer_deinit(ring_buffer_t rb);
+void ring_buffer_deinit(ring_buffer_t* rb);
 
 ///
 /// @brief Resets the ring buffer state to empty (ie tail == head). Data is not cleared.
