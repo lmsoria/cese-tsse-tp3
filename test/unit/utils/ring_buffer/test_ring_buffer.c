@@ -48,6 +48,8 @@ static uint8_t ring_buffer_container[BUFFER_SIZE] = {0};
 
 void setUp(void) { ring_buffer = ring_buffer_init(ring_buffer_container, BUFFER_SIZE); }
 
+void tearDown(void) { ring_buffer_deinit(&ring_buffer); }
+
 /// @test This test verifies that the ring buffer is initialized correctly with the expected properties
 /// when no data has been written to or read from it. It sets up a ring buffer with a specified
 /// size and checks that the size matches the expected buffer size, and both the read and write
