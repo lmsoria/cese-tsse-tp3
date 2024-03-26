@@ -52,8 +52,7 @@ void tearDown(void) { ring_buffer_deinit(&ring_buffer); }
 
 /// @test This test verifies that the ring buffer is initialized correctly with the expected properties
 /// when no data has been written to or read from it. It sets up a ring buffer with a specified
-/// size and checks that the size matches the expected buffer size, and both the read and write
-/// indices are at their initial positions (0).
+/// size and checks that the size matches the expected buffer size.
 void test_initial_state(void)
 {
     ring_buffer_t rb;
@@ -67,8 +66,8 @@ void test_initial_state(void)
     TEST_ASSERT_EQUAL_UINT(0, ring_buffer_size(rb));
 }
 
-/// @test Ensure that the ring buffer reports as empty when no data has been written to it and that attempting to read
-/// from it returns an appropriate error or indication of emptiness.
+/// @test This test verifies that the ring buffer reports as empty when no data has been written to it, and also that is
+/// not full.
 void test_buffer_empty(void)
 {
     TEST_ASSERT(ring_buffer_is_empty(ring_buffer));
@@ -76,9 +75,7 @@ void test_buffer_empty(void)
 }
 
 /// @test This test verifies the behavior of the ring_buffer_is_full() function by filling the ring buffer to its
-/// maximum capacity and then checking whether the function correctly returns true. It initializes a ring buffer with a
-/// specified size and fills it with data up to its capacity. After filling the buffer, the test asserts that the buffer
-/// is not empty and that the ring_buffer_is_full() function returns true, indicating that the buffer is indeed full.
+/// maximum capacity and then checking whether the function correctly returns true.
 void test_buffer_full(void)
 {
     for (size_t i = 0; i < BUFFER_SIZE; i++) { ring_buffer_write_byte(ring_buffer, (uint8_t)i); }
@@ -99,7 +96,7 @@ void test_read_empty_buffer(void)
 
 /// @test This test verifies the behavior of ring_buffer_reset(), in which after calling it the buffer state should be
 /// empty.
-void test_reset_ring_buffer(void)
+void test_ring_buffer_reset(void)
 {
     // First fill the buffer with some data.
     for (size_t i = 0; i < BUFFER_SIZE; i++) { ring_buffer_write_byte(ring_buffer, (uint8_t)i); }
@@ -145,18 +142,26 @@ void test_buffer_read_and_write_single_byte(void)
     const uint8_t A = 'a';
     uint8_t data = 0;
 
-    // First case. Write A and Read A.
+    // First write A
     ring_buffer_write_byte(ring_buffer, A);
 
     // After writing A the ring buffer size should increase
     TEST_ASSERT_EQUAL_UINT(1, ring_buffer_size(ring_buffer));
 
+    // Now the buffer is not empty nor full.
+    TEST_ASSERT(!ring_buffer_is_empty(ring_buffer));
+    TEST_ASSERT(!ring_buffer_is_full(ring_buffer));
+
     // Now retrieve the data
     TEST_ASSERT_EQUAL_INT(0, ring_buffer_read_byte(ring_buffer, &data));
-    TEST_ASSERT_EQUAL_UINT8(data, A);
+    TEST_ASSERT_EQUAL_UINT8(A, data);
 
-    // After writing A the ring buffer size should increase
+    // After reading the ring buffer its size should decrease
     TEST_ASSERT_EQUAL_UINT(0, ring_buffer_size(ring_buffer));
+
+    // Now the buffer is empty but not full.
+    TEST_ASSERT(ring_buffer_is_empty(ring_buffer));
+    TEST_ASSERT(!ring_buffer_is_full(ring_buffer));
 }
 
 /// @test This test verifies the behavior of the ring buffer when performing a series of write and read operations
@@ -200,6 +205,7 @@ void test_buffer_read_and_write_with_wrapping(void)
     const uint8_t C = 'c';
     uint8_t data = 0;
 
+    // First element will be `0`, second `1`, and so on
     for (size_t i = 0; i < BUFFER_SIZE - 1; i++) { ring_buffer_write_byte(ring_buffer, (uint8_t)i); }
 
     // We should have room for one more byte here
@@ -212,7 +218,7 @@ void test_buffer_read_and_write_with_wrapping(void)
     TEST_ASSERT_EQUAL_UINT(BUFFER_SIZE, ring_buffer_size(ring_buffer));
     TEST_ASSERT(ring_buffer_is_full(ring_buffer));
 
-    // Now add B. Since there is no space it will overwrite old data.
+    // Now add B. Since there is no space it will overwrite old data
     ring_buffer_write_byte(ring_buffer, B);
 
     TEST_ASSERT_EQUAL_UINT(BUFFER_SIZE, ring_buffer_size(ring_buffer));
